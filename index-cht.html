@@ -1,0 +1,587 @@
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>貪食蛇實驗室遊戲</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary-color: #4a90e2;
+    --secondary-color: #f39c12;
+    --background-color: #ecf0f1;
+    --grid-color: #34495e;
+    --cell-color: #ffffff;
+    --start-color: #2ecc71;
+    --end-color: #e74c3c;
+    --obstacle-color: #7f8c8d;
+    --path-color: #f1c40f;
+    --reset-color: #e67e22;
+    --text-color: #333;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    font-family: 'Roboto', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    transition: background-color 0.5s ease;
+  }
+
+  .main-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    padding: 20px;
+    overflow: hidden;
+  }
+
+  .game-container {
+    display: flex;
+    flex-direction: column;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 15px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    max-width: 100%;
+    max-height: 100%;
+    overflow: hidden;
+  }
+
+  h1 {
+    color: var(--primary-color);
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+
+  .input-group {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  label {
+    margin-right: 10px;
+    font-weight: bold;
+    color: var(--grid-color);
+  }
+
+  input[type="number"] {
+    width: 60px;
+    padding: 5px;
+    border: 2px solid var(--primary-color);
+    border-radius: 5px;
+    font-size: 1rem;
+    text-align: center;
+  }
+
+  button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 5px;
+  }
+
+  button:hover {
+    background-color: darken(var(--primary-color), 10%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+
+  #resetBtn {
+    background-color: var(--reset-color);
+  }
+
+  #resetBtn:hover {
+    background-color: darken(var(--reset-color), 10%);
+  }
+
+  #grid-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-grow: 1;
+    overflow: hidden;
+  }
+
+  #grid {
+    display: grid;
+    gap: 2px;
+    background-color: var(--grid-color);
+    border-radius: 10px;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    max-width: 80vmin;
+    max-height: 80vmin;
+  }
+
+  .cell {
+    background-color: var(--cell-color);
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    aspect-ratio: 1 / 1;
+  }
+
+  .cell:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  }
+
+  .start { background-color: var(--start-color); }
+  .end { background-color: var(--end-color); }
+  .obstacle { background-color: var(--obstacle-color); }
+  .path { 
+    background-color: var(--path-color);
+    animation: pulse 1s infinite alternate;
+  }
+
+  @keyframes pulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.1); }
+  }
+
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+
+  .modal-content {
+    background-color: white;
+    margin: 15% auto;
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    animation: modalFadeIn 0.5s;
+  }
+
+  @keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(-50px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .close:hover,
+  .close:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .instructions h2 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+  }
+
+  .instructions ol {
+    padding-left: 20px;
+  }
+
+  .instructions li {
+    margin-bottom: 10px;
+  }
+
+  .button-group {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+
+  #instructionsBtn {
+    background-color: var(--secondary-color);
+  }
+
+  @media (max-width: 768px) {
+    .input-group {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .input-group > * {
+      margin: 5px 0;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+    }
+
+    button {
+      padding: 8px 16px;
+      font-size: 0.9rem;
+    }
+
+    label {
+      margin-right: 0;
+      margin-bottom: 5px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .main-container {
+      padding: 10px;
+    }
+
+    .game-container {
+      padding: 10px;
+    }
+
+    h1 {
+      font-size: 1.2rem;
+    }
+
+    button {
+      padding: 6px 12px;
+      font-size: 0.8rem;
+    }
+
+    .input-group {
+      text-align: center;
+    }
+
+    label, input[type="number"] {
+      display: block;
+      margin: 5px auto;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="main-container">
+    <div class="game-container">
+      <h1>貪食蛇實驗室遊戲</h1>
+      <div class="input-group">
+        <label for="gridSize">網格大小 (n x n):</label>
+        <input type="number" id="gridSize" min="5" max="20" value="10">
+        <button id="createGrid">創建網格</button>
+      </div>
+      <div id="grid-container">
+        <div id="grid"></div>
+      </div>
+      <div class="button-group">
+        <button id="startBtn" disabled>開始遊戲</button>
+        <button id="resetBtn">重置遊戲</button>
+        <button id="instructionsBtn">遊戲說明</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="instructionsModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>遊戲說明</h2>
+      <ol>
+        <li>輸入網格大小 (5 至 20 之間)，然後點擊「創建網格」。</li>
+        <li>點擊一個方格來選擇起點 (綠色)。</li>
+        <li>再點擊另一個方格來選擇終點 (紅色)。</li>
+        <li>點擊「開始遊戲」自動生成障礙並尋找路徑。</li>
+        <li>如果找到路徑，將顯示路徑的動畫效果。</li>
+        <li>點擊「重置遊戲」重新開始。</li>
+      </ol>
+    </div>
+  </div>
+</body>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+<script>
+class GameModel {
+  constructor() {
+    this.gridSize = 10;
+    this.startCell = null;
+    this.endCell = null;
+    this.obstacles = [];
+  }
+
+  setGridSize(size) {
+    this.gridSize = size;
+  }
+
+  setStartCell(cell) {
+    this.startCell = cell;
+  }
+
+  setEndCell(cell) {
+    this.endCell = cell;
+  }
+
+  setObstacles(obstacles) {
+    this.obstacles = obstacles;
+  }
+
+  reset() {
+    this.startCell = null;
+    this.endCell = null;
+    this.obstacles = [];
+  }
+}
+
+class GameView {
+  constructor() {
+    this.grid = document.getElementById('grid');
+    this.gridContainer = document.getElementById('grid-container');
+    this.gridSizeInput = document.getElementById('gridSize');
+    this.createGridBtn = document.getElementById('createGrid');
+    this.startBtn = document.getElementById('startBtn');
+    this.resetBtn = document.getElementById('resetBtn');
+    this.instructionsBtn = document.getElementById('instructionsBtn');
+    this.instructionsModal = document.getElementById('instructionsModal');
+    this.messageModal = document.getElementById('messageModal');
+    this.modalMessage = document.getElementById('modalMessage');
+    this.closeBtns = document.getElementsByClassName('close');
+  }
+
+  createGrid(size) {
+    this.grid.innerHTML = '';
+    this.grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+    
+    for (let i = 0; i < size * size; i++) {
+      let cell = document.createElement('div');
+      cell.className = 'cell';
+      this.grid.appendChild(cell);
+    }
+
+    this.adjustGridSize();
+
+    gsap.from('.cell', {
+      duration: 0.5,
+      scale: 0,
+      opacity: 0,
+      stagger: {
+        grid: [size, size],
+        from: "center",
+        amount: 0.5
+      }
+    });
+  }
+
+  adjustGridSize() {
+    const containerWidth = this.gridContainer.offsetWidth;
+    const containerHeight = this.gridContainer.offsetHeight;
+    const size = Math.min(containerWidth, containerHeight);
+    this.grid.style.width = `${size}px`;
+    this.grid.style.height = `${size}px`;
+  }
+
+  updateCell(cell, className) {
+    cell.className = `cell ${className}`;
+  }
+
+  setStartBtnState(enabled) {
+    this.startBtn.disabled = !enabled;
+  }
+
+  showModal(modal, message = '') {
+    if (message) {
+      this.modalMessage.textContent = message;
+    }
+    modal.style.display = 'block';
+  }
+
+  hideModal(modal) {
+    modal.style.display = 'none';
+  }
+
+  animatePath(path) {
+    let timeline = gsap.timeline();
+    
+    path.forEach((cell, index) => {
+      if (index > 0 && index < path.length - 1) {
+        timeline.to(cell, {
+          duration: 0.1,
+          backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--path-color'),
+          scale: 1.1,
+          onComplete: () => cell.classList.add('path')
+        });
+      }
+    });
+    
+    timeline.to('.path', {
+      duration: 0.5,
+      scale: 1,
+      ease: "elastic.out(1, 0.3)"
+    });
+  }
+}
+
+class GameController {
+  constructor(model, view) {
+    this.model = model;
+    this.view = view;
+
+    this.view.createGridBtn.addEventListener('click', () => this.createGrid());
+    this.view.startBtn.addEventListener('click', () => this.startGame());
+    this.view.resetBtn.addEventListener('click', () => this.resetGame());
+    this.view.instructionsBtn.addEventListener('click', () => this.view.showModal(this.view.instructionsModal));
+
+    Array.from(this.view.closeBtns).forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.view.hideModal(this.view.instructionsModal);
+        this.view.hideModal(this.view.messageModal);
+      });
+    });
+
+    this.changeBackgroundColor();
+    window.addEventListener('resize', () => {
+      this.view.adjustGridSize();
+    });
+  }
+
+  createGrid() {
+    const size = parseInt(this.view.gridSizeInput.value);
+    if (isNaN(size) || size < 5 || size > 20) {
+      this.view.showModal(this.view.messageModal, 'Please enter a number between 5 and 20');
+      return;
+    }
+    
+    this.model.setGridSize(size);
+    this.view.createGrid(size);
+    this.model.reset();
+    this.view.setStartBtnState(false);
+
+    this.view.grid.querySelectorAll('.cell').forEach(cell => {
+      cell.addEventListener('click', () => this.selectCell(cell));
+    });
+  }
+
+  selectCell(cell) {
+    if (!this.model.startCell) {
+      this.model.setStartCell(cell);
+      this.view.updateCell(cell, 'start');
+      gsap.to(cell, {duration: 0.3, scale: 1.1, yoyo: true, repeat: 1});
+    } else if (!this.model.endCell && cell !== this.model.startCell) {
+      this.model.setEndCell(cell);
+      this.view.updateCell(cell, 'end');
+      gsap.to(cell, {duration: 0.3, scale: 1.1, yoyo: true, repeat: 1});
+      this.view.setStartBtnState(true);
+    }
+  }
+
+  startGame() {
+    if (!this.model.startCell || !this.model.endCell) return;
+    
+    this.model.obstacles.forEach(obs => this.view.updateCell(obs, ''));
+    this.view.grid.querySelectorAll('.path').forEach(cell => this.view.updateCell(cell, ''));
+    this.model.setObstacles([]);
+    
+    let cells = Array.from(this.view.grid.children);
+    for (let i = 0; i < this.model.gridSize; i++) {
+      let randomCell;
+      do {
+        randomCell = cells[Math.floor(Math.random() * cells.length)];
+      } while (randomCell === this.model.startCell || randomCell === this.model.endCell || this.model.obstacles.includes(randomCell));
+      this.view.updateCell(randomCell, 'obstacle');
+      this.model.obstacles.push(randomCell);
+    }
+    
+      gsap.from('.obstacle', {duration: 0.5, scale: 0, opacity: 0, stagger: 0.05});
+    
+    let path = this.findPath();
+    if (path) {
+      this.view.animatePath(path);
+    } else {
+      this.view.showModal(this.view.messageModal, 'No path found. Please try again!');
+    }
+    
+    this.view.setStartBtnState(false);
+  }
+
+  resetGame() {
+    gsap.killTweensOf("*");
+    this.view.grid.innerHTML = '';
+    this.model.reset();
+    this.view.setStartBtnState(false);
+    this.createGrid();
+    gsap.from('.game-container', {duration: 0.5, scale: 0.9, opacity: 0, ease: "back.out(1.7)"});
+  }
+
+  findPath() {
+    let queue = [[this.model.startCell]];
+    let visited = new Set([this.model.startCell]);
+    
+    while (queue.length > 0) {
+      let path = queue.shift();
+      let cell = path[path.length - 1];
+      
+      if (cell === this.model.endCell) {
+        return path;
+      }
+      
+      let neighbors = this.getNeighbors(cell);
+      for (let neighbor of neighbors) {
+        if (!visited.has(neighbor) && !this.model.obstacles.includes(neighbor)) {
+          visited.add(neighbor);
+          queue.push([...path, neighbor]);
+        }
+      }
+    }
+    
+    return null;
+  }
+
+  getNeighbors(cell) {
+    let index = Array.from(this.view.grid.children).indexOf(cell);
+    let row = Math.floor(index / this.model.gridSize);
+    let col = index % this.model.gridSize;
+    let neighbors = [];
+    
+    if (row > 0) neighbors.push(this.view.grid.children[index - this.model.gridSize]);
+    if (row < this.model.gridSize - 1) neighbors.push(this.view.grid.children[index + this.model.gridSize]);
+    if (col > 0) neighbors.push(this.view.grid.children[index - 1]);
+    if (col < this.model.gridSize - 1) neighbors.push(this.view.grid.children[index + 1]);
+    
+    return neighbors;
+  }
+
+  changeBackgroundColor() {
+    const hue = (Date.now() / 100) % 360;
+    document.body.style.backgroundColor = `hsl(${hue}, 70%, 90%)`;
+    requestAnimationFrame(() => this.changeBackgroundColor());
+  }
+}
+
+const gameModel = new GameModel();
+const gameView = new GameView();
+const gameController = new GameController(gameModel, gameView);
+
+gameController.createGrid();
+</script>
+</body></html>
